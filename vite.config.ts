@@ -148,7 +148,7 @@ function authPopupPlugin(): Plugin {
 const spa = process.env.VITE_SPA === "true";
 
 export default defineConfig(({ command, isPreview }) => ({
-  base: spa ? "./" : "/",
+  base: spa ? "/opal-turbo-ember-winter/" : "/",
   server: {
     host: "0.0.0.0",
     port: 8080,

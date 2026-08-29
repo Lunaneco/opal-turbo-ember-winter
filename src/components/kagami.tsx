@@ -11,7 +11,6 @@ import {
   type Bead,
   type FocusSpot,
 } from "@/lib/kaleido/facet";
-import { analyzeBeads } from "@/lib/kaleido/analyze";
 import { createKaleido } from "@/lib/kaleido/gl";
 import { createMotion } from "@/lib/kaleido/motion";
 import { DEFAULT_THEME, THEMES, type Theme } from "@/lib/kaleido/themes";
@@ -205,6 +204,7 @@ export function Kagami() {
           await step(80, "AI分析");
           try {
             const dataUrl = toJpegDataUrl(square, 320);
+            const { analyzeBeads } = await import("@/lib/kaleido/analyze");
             const ai = await Promise.race([
               analyzeBeads({ data: { imageDataUrl: dataUrl } }),
               new Promise<{ ok: false; beads: [] }>((resolve) => {

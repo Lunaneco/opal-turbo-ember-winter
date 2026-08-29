@@ -23,6 +23,7 @@ if (!css || !js) {
   throw new Error(`missing client assets: css=${css} js=${js}`);
 }
 
+const prefix = "/opal-turbo-ember-winter";
 const html = `<!doctype html>
 <html lang="ja">
   <head>
@@ -31,13 +32,13 @@ const html = `<!doctype html>
     <title>月華鏡</title>
     <meta name="description" content="画像を結晶に割り、くるくる回すと万華鏡になる。" />
     <meta name="theme-color" content="#09090b" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/${css}" />
+    <link rel="icon" type="image/svg+xml" href="${prefix}/favicon.svg" />
+    <link rel="apple-touch-icon" href="${prefix}/apple-touch-icon.png" />
+    <link rel="stylesheet" href="${prefix}/assets/${css}" />
   </head>
   <body class="bg-bg text-fg">
     <div id="root"></div>
-    <script type="module" src="./assets/${js}"></script>
+    <script type="module" src="${prefix}/assets/${js}"></script>
   </body>
 </html>
 `;
