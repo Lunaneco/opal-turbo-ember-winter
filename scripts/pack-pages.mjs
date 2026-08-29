@@ -31,7 +31,9 @@ function listFiles(dir, rel = "") {
 }
 
 const files = listFiles(dest);
-const cssRel = files.find((name) => name.endsWith(".css"));
+const cssRel =
+  files.find((name) => /^assets\/.*\.css$/.test(name)) ||
+  files.find((name) => name.endsWith(".css") && !name.includes("__grok"));
 const jsRel = files.find((name) => /(^|\/)index-[^/]+\.js$/.test(name));
 if (!cssRel || !jsRel) {
   throw new Error(

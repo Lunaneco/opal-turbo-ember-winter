@@ -567,24 +567,14 @@ function PlayHud({
 }) {
   return (
     <>
-      <header
-        className="kagami-hud-top pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 px-4 md:px-6"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-          pointerEvents: "none",
-        }}
-      >
+      <header className="kagami-hud-top pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 px-4 md:px-6">
         <div className="flex items-center gap-2">
           <Moon className="size-4 text-muted" aria-hidden="true" />
           <p className="font-display text-lg font-semibold tracking-tight md:text-xl">
             月華鏡
           </p>
         </div>
-        <div className="pointer-events-auto flex gap-2" style={{ pointerEvents: "auto" }}>
+        <div className="pointer-events-auto flex gap-2">
           <Button
             type="button"
             variant="secondary"
@@ -639,22 +629,9 @@ function PlayHud({
         </div>
       </header>
 
-      <div
-        className="kagami-hud-bottom pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-3 px-4 md:px-6"
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 30,
-          pointerEvents: "none",
-        }}
-      >
+      <div className="kagami-hud-bottom pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-3 px-4 md:px-6">
         {showThemes ? (
-          <div
-            className="pointer-events-auto flex w-full max-w-md items-center justify-start gap-1 overflow-x-auto rounded-lg bg-elevated/90 px-2 py-2"
-            style={{ pointerEvents: "auto" }}
-          >
+          <div className="pointer-events-auto flex w-full max-w-md items-center justify-start gap-1 overflow-x-auto rounded-lg bg-elevated/90 px-2 py-2">
             {THEMES.map((item) => (
               <button
                 key={item.id}
@@ -680,10 +657,7 @@ function PlayHud({
           </div>
         ) : null}
         {showParts ? (
-          <div
-            className="pointer-events-auto w-full max-w-md rounded-lg bg-elevated/90 px-3 py-2"
-            style={{ pointerEvents: "auto" }}
-          >
+          <div className="pointer-events-auto w-full max-w-md rounded-lg bg-elevated/90 px-3 py-2">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="text-xs text-muted">パーツ</p>
               <div className="flex gap-1">
@@ -722,10 +696,7 @@ function PlayHud({
           </div>
         ) : null}
         <p className="text-xs text-muted">くるくる回せます</p>
-        <div
-          className="pointer-events-auto grid grid-cols-4 gap-1 rounded-lg bg-elevated/90 p-1"
-          style={{ pointerEvents: "auto" }}
-        >
+        <div className="pointer-events-auto grid grid-cols-4 gap-1 rounded-lg bg-elevated/90 p-1">
           {SLICE_OPTIONS.map((n) => (
             <button
               key={n}

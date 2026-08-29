@@ -103,20 +103,10 @@
 }
 
 .kagami-hud-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
   padding-top: max(1rem, env(safe-area-inset-top));
 }
 
 .kagami-hud-bottom {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 
