@@ -24,7 +24,7 @@ const MAX_UPLOAD_BYTES = 8_000_000;
 const SLICE_OPTIONS = [6, 8, 10, 12];
 
 type Mode = "play" | "pick" | "beads";
-type Gate = "title" | "load" | "ready";
+type Gate = "load" | "ready";
 
 type Engine = {
   setPhoto: (src: TexImageSource) => void;
@@ -44,7 +44,7 @@ export function Kagami() {
   const [gyroOn, setGyroOn] = useState(false);
   const [gyroBusy, setGyroBusy] = useState(false);
   const [ready, setReady] = useState(false);
-  const [gate, setGate] = useState<Gate>("title");
+  const [gate, setGate] = useState<Gate>("load");
   const [loadPct, setLoadPct] = useState(0);
   const [loadLabel, setLoadLabel] = useState("準備");
   const [mode, setMode] = useState<Mode>("play");
@@ -63,9 +63,8 @@ export function Kagami() {
   const setShowPartsRef = useRef(setShowParts);
   const themeRef = useRef(theme);
   const readyRef = useRef(false);
-  const gateRef = useRef<Gate>("title");
+  const gateRef = useRef<Gate>("load");
   const assetsRef = useRef(false);
-  const startingRef = useRef(false);
   setHudRef.current = setHud;
   setShowPartsRef.current = setShowParts;
   themeRef.current = theme;
@@ -102,6 +101,7 @@ export function Kagami() {
       canvas.style.position = "absolute";
       canvas.style.left = "0";
       canvas.style.top = "0";
+      canvas.style.zIndex = "0";
       canvas.style.width = `${cssW}px`;
       canvas.style.height = `${cssH}px`;
       const w = Math.max(1, Math.round(cssW * dpr));
@@ -235,6 +235,8 @@ export function Kagami() {
         await step(100, "完了");
         assetsRef.current = true;
         setReady(true);
+        setGate("ready");
+        setHud(true);
       } catch {
         photoOn = 0;
         setReady(false);
@@ -391,29 +393,6 @@ export function Kagami() {
 
   const active = spots.find((s) => s.id === activeId) ?? spots[0];
 
-  async function startFromTitle() {
-    if (startingRef.current) return;
-    if (gate !== "title") return;
-    startingRef.current = true;
-    if (assetsRef.current) {
-      setGate("ready");
-      setHud(true);
-      return;
-    }
-    setGate("load");
-    const t0 = Date.now();
-    while (!assetsRef.current && Date.now() - t0 < 15000) {
-      await new Promise((r) => window.setTimeout(r, 50));
-    }
-    if (!assetsRef.current) {
-      startingRef.current = false;
-      setGate("title");
-      return;
-    }
-    setGate("ready");
-    setHud(true);
-  }
-
   return (
     <div
       className="kagami-shell relative h-dvh w-full overflow-hidden bg-bg text-fg"
@@ -438,13 +417,11 @@ export function Kagami() {
           "kagami-canvas absolute inset-0 size-full",
           (gate !== "ready" || mode !== "play") && "pointer-events-none",
         )}
+        style={{ zIndex: 0 }}
         draggable={false}
         aria-label="万華鏡"
       />
 
-      {gate === "title" ? (
-        <TitleScreen onStart={() => void startFromTitle()} />
-      ) : null}
       {gate === "load" ? (
         <LoadScreen pct={loadPct} label={loadLabel} />
       ) : null}
@@ -516,33 +493,11 @@ export function Kagami() {
   );
 }
 
-function TitleScreen({ onStart }: { onStart: () => void }) {
-  return (
-    <button
-      type="button"
-      onPointerDown={(e) => {
-        e.preventDefault();
-        onStart();
-      }}
-      onClick={(e) => {
-        e.preventDefault();
-        onStart();
-      }}
-      className="kagami-title absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 px-6"
-    >
-      <Moon className="size-8 text-muted" aria-hidden="true" />
-      <h1 className="font-display text-4xl font-semibold tracking-tight">
-        月華鏡
-      </h1>
-      <p className="text-xs text-muted">タップしてはじめる</p>
-    </button>
-  );
-}
-
 function LoadScreen({ pct, label }: { pct: number; label: string }) {
   return (
     <div
-      className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 bg-bg px-6"
+      className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-6 bg-bg px-6"
+      style={{ zIndex: 40 }}
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -612,14 +567,24 @@ function PlayHud({
 }) {
   return (
     <>
-      <header className="kagami-hud-top pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 px-4 md:px-6">
+      <header
+        className="kagami-hud-top pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 px-4 md:px-6"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 30,
+          pointerEvents: "none",
+        }}
+      >
         <div className="flex items-center gap-2">
           <Moon className="size-4 text-muted" aria-hidden="true" />
           <p className="font-display text-lg font-semibold tracking-tight md:text-xl">
             月華鏡
           </p>
         </div>
-        <div className="pointer-events-auto flex gap-2">
+        <div className="pointer-events-auto flex gap-2" style={{ pointerEvents: "auto" }}>
           <Button
             type="button"
             variant="secondary"
@@ -674,9 +639,22 @@ function PlayHud({
         </div>
       </header>
 
-      <div className="kagami-hud-bottom pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 px-4 md:px-6">
+      <div
+        className="kagami-hud-bottom pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-3 px-4 md:px-6"
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 30,
+          pointerEvents: "none",
+        }}
+      >
         {showThemes ? (
-          <div className="pointer-events-auto flex w-full max-w-md items-center justify-start gap-1 overflow-x-auto rounded-lg bg-elevated/90 px-2 py-2">
+          <div
+            className="pointer-events-auto flex w-full max-w-md items-center justify-start gap-1 overflow-x-auto rounded-lg bg-elevated/90 px-2 py-2"
+            style={{ pointerEvents: "auto" }}
+          >
             {THEMES.map((item) => (
               <button
                 key={item.id}
@@ -702,7 +680,10 @@ function PlayHud({
           </div>
         ) : null}
         {showParts ? (
-          <div className="pointer-events-auto w-full max-w-md rounded-lg bg-elevated/90 px-3 py-2">
+          <div
+            className="pointer-events-auto w-full max-w-md rounded-lg bg-elevated/90 px-3 py-2"
+            style={{ pointerEvents: "auto" }}
+          >
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="text-xs text-muted">パーツ</p>
               <div className="flex gap-1">
@@ -741,7 +722,10 @@ function PlayHud({
           </div>
         ) : null}
         <p className="text-xs text-muted">くるくる回せます</p>
-        <div className="pointer-events-auto grid grid-cols-4 gap-1 rounded-lg bg-elevated/90 p-1">
+        <div
+          className="pointer-events-auto grid grid-cols-4 gap-1 rounded-lg bg-elevated/90 p-1"
+          style={{ pointerEvents: "auto" }}
+        >
           {SLICE_OPTIONS.map((n) => (
             <button
               key={n}
@@ -874,7 +858,10 @@ function BeadEditor({
   }
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col bg-bg/92">
+    <div
+      className="absolute inset-0 z-40 flex flex-col bg-bg/92"
+      style={{ zIndex: 40 }}
+    >
       <header className="kagami-hud-top flex items-start justify-between gap-3 px-4 md:px-6">
         <div>
           <p className="font-display text-lg font-semibold tracking-tight md:text-xl">
@@ -1064,7 +1051,10 @@ function FocusPicker({
   }
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col bg-bg/92">
+    <div
+      className="absolute inset-0 z-40 flex flex-col bg-bg/92"
+      style={{ zIndex: 40 }}
+    >
       <header className="kagami-hud-top flex items-start justify-between gap-3 px-4 md:px-6">
         <div>
           <p className="font-display text-lg font-semibold tracking-tight md:text-xl">
