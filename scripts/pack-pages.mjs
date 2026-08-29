@@ -1,5 +1,6 @@
 import {
   cpSync,
+  existsSync,
   mkdirSync,
   readdirSync,
   rmSync,
@@ -8,22 +9,36 @@ import {
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+const prefix = "/opal-turbo-ember-winter";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const src = join(root, ".vercel/output/static");
 const dest = join(root, ".output/public");
+const nested = join(src, "opal-turbo-ember-winter");
+const copyFrom = existsSync(join(nested, "assets")) ? nested : src;
 
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
-cpSync(src, dest, { recursive: true });
+cpSync(copyFrom, dest, { recursive: true });
 
-const assets = readdirSync(join(dest, "assets"));
-const css = assets.find((name) => name.endsWith(".css"));
-const js = assets.find((name) => name.startsWith("index-") && name.endsWith(".js"));
-if (!css || !js) {
-  throw new Error(`missing client assets: css=${css} js=${js}`);
+function listFiles(dir, rel = "") {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const next = rel ? `${rel}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...listFiles(join(dir, entry.name), next));
+    else out.push(next);
+  }
+  return out;
 }
 
-const prefix = "/opal-turbo-ember-winter";
+const files = listFiles(dest);
+const cssRel = files.find((name) => name.endsWith(".css"));
+const jsRel = files.find((name) => /(^|\/)index-[^/]+\.js$/.test(name));
+if (!cssRel || !jsRel) {
+  throw new Error(
+    `missing client assets: css=${cssRel} js=${jsRel} files=${files.join(",")}`,
+  );
+}
+
 const html = `<!doctype html>
 <html lang="ja">
   <head>
@@ -34,11 +49,11 @@ const html = `<!doctype html>
     <meta name="theme-color" content="#09090b" />
     <link rel="icon" type="image/svg+xml" href="${prefix}/favicon.svg" />
     <link rel="apple-touch-icon" href="${prefix}/apple-touch-icon.png" />
-    <link rel="stylesheet" href="${prefix}/assets/${css}" />
+    <link rel="stylesheet" href="${prefix}/${cssRel}" />
   </head>
   <body class="bg-bg text-fg">
     <div id="root"></div>
-    <script type="module" src="${prefix}/assets/${js}"></script>
+    <script type="module" src="${prefix}/${jsRel}"></script>
   </body>
 </html>
 `;
@@ -46,4 +61,4 @@ const html = `<!doctype html>
 writeFileSync(join(dest, "index.html"), html);
 writeFileSync(join(dest, "404.html"), html);
 writeFileSync(join(dest, ".nojekyll"), "");
-console.log(`packed ${dest} with ${js} ${css}`);
+console.log(`packed ${dest} with ${jsRel} ${cssRel}`);
