@@ -1,0 +1,8 @@
+node_modules/
+.vercel/
+.tanstack/
+.project_id
+.github_repo
+.env
+.env.*
+.DS_Store

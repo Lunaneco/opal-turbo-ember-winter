@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "KAGAMI",
+      "hasCanvas": true,
+      "bodyTextLen": 43,
+      "bodyTextHash": "87a3c34ea3c2e0e2740d2562ec5f2c9f07a5afec23ab40ea003ba138d7b656de",
+      "bodyTextPrefix": "KAGAMI 月華鏡 · くるくると回す 指でくるくる滑らせて回す 6 8 10 12",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "KAGAMI",
+      "hasCanvas": true,
+      "bodyTextLen": 43,
+      "bodyTextHash": "87a3c34ea3c2e0e2740d2562ec5f2c9f07a5afec23ab40ea003ba138d7b656de",
+      "bodyTextPrefix": "KAGAMI 月華鏡 · くるくると回す 指でくるくる滑らせて回す 6 8 10 12",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
