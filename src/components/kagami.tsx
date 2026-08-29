@@ -18,9 +18,10 @@ import { DEFAULT_THEME, THEMES, type Theme } from "@/lib/kaleido/themes";
 import { loadImage } from "@/lib/geomark/engine";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+import { cn, publicUrl } from "@/lib/utils";
 
-const START_IMAGE = "/samples/icon.jpg";
+const START_IMAGE = publicUrl("samples/icon.jpg");
+const MAX_UPLOAD_BYTES = 8_000_000;
 const SLICE_OPTIONS = [6, 8, 10, 12];
 
 type Mode = "play" | "pick" | "beads";
@@ -239,6 +240,7 @@ export function Kagami() {
 
     applyFileRef.current = (file: File) => {
       if (!file.type.startsWith("image/")) return;
+      if (file.size > MAX_UPLOAD_BYTES) return;
       const url = URL.createObjectURL(file);
       const next = defaultSpots();
       setPreview(url);
@@ -248,7 +250,7 @@ export function Kagami() {
       setLoadPct(0);
       setLoadLabel("画像");
       void applyImage(url, next, {
-        ai: true,
+        ai: import.meta.env.VITE_ENABLE_AI === "true",
         onStep: (pct, label) => {
           setLoadPct(pct);
           setLoadLabel(label);

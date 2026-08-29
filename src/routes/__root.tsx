@@ -1,6 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { publicUrl } from "@/lib/utils";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "月華鏡";
@@ -18,25 +19,35 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#09090b" },
     ],
     links: [
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "icon", type: "image/svg+xml", href: publicUrl("favicon.svg") },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: publicUrl("icon-192.png") },
+      { rel: "apple-touch-icon", href: publicUrl("apple-touch-icon.png") },
       { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
+      { rel: "manifest", href: publicUrl("__grok/manifest.webmanifest") },
     ],
   }),
-  component: () => (
-    <html lang="ja" className="antialiased" suppressHydrationWarning>
-      <head>
-        <HeadContent />
-      </head>
-      <body className="bg-bg text-fg">
+  component: () => {
+    const app = (
+      <>
         <PreviewHostBridge />
         <AuthProvider>
           <Outlet />
         </AuthProvider>
-        <Scripts />
-      </body>
-    </html>
-  ),
+      </>
+    );
+    if (import.meta.env.VITE_SPA === "true") {
+      return app;
+    }
+    return (
+      <html lang="ja" className="antialiased" suppressHydrationWarning>
+        <head>
+          <HeadContent />
+        </head>
+        <body className="bg-bg text-fg">
+          {app}
+          <Scripts />
+        </body>
+      </html>
+    );
+  },
 });
