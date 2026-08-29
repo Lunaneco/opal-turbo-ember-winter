@@ -97,8 +97,11 @@ export function Kagami() {
 
     const fit = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const w = Math.max(1, Math.round(window.innerWidth * dpr));
-      const h = Math.max(1, Math.round(window.innerHeight * dpr));
+      const rect = canvas.getBoundingClientRect();
+      const cssW = Math.max(1, rect.width || window.innerWidth);
+      const cssH = Math.max(1, rect.height || window.innerHeight);
+      const w = Math.max(1, Math.round(cssW * dpr));
+      const h = Math.max(1, Math.round(cssH * dpr));
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
@@ -106,6 +109,7 @@ export function Kagami() {
       }
     };
     fit();
+    requestAnimationFrame(fit);
 
     const unbind = motion.attach(canvas, {
       onTap: () => {
@@ -119,6 +123,8 @@ export function Kagami() {
       },
     });
     window.addEventListener("resize", fit);
+    window.visualViewport?.addEventListener("resize", fit);
+    window.visualViewport?.addEventListener("scroll", fit);
     const lockScroll = (e: TouchEvent) => {
       const t = e.target;
       if (t instanceof Element && t.closest("[role='slider']")) return;
@@ -281,6 +287,8 @@ export function Kagami() {
       unbind();
       motion.dispose();
       window.removeEventListener("resize", fit);
+      window.visualViewport?.removeEventListener("resize", fit);
+      window.visualViewport?.removeEventListener("scroll", fit);
       document.removeEventListener("touchmove", lockScroll, true);
     };
   }, []);
@@ -404,7 +412,7 @@ export function Kagami() {
 
   return (
     <div
-      className="kagami-shell relative h-dvh w-full overflow-hidden bg-bg text-fg"
+      className="kagami-shell bg-bg text-fg"
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
@@ -416,7 +424,7 @@ export function Kagami() {
       <canvas
         ref={canvasRef}
         className={cn(
-          "kagami-canvas absolute inset-0 size-full",
+          "kagami-canvas",
           (gate !== "ready" || mode !== "play") && "pointer-events-none",
         )}
         draggable={false}
@@ -509,13 +517,17 @@ function TitleScreen({ onStart }: { onStart: () => void }) {
         e.preventDefault();
         onStart();
       }}
-      className="kagami-title absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 px-6"
+      className="kagami-title absolute inset-0 z-30"
     >
-      <Moon className="size-8 text-fg" aria-hidden="true" />
-      <h1 className="font-display text-4xl font-semibold tracking-tight">
-        月華鏡
-      </h1>
-      <p className="text-xs text-fg">タップしてはじめる</p>
+      <span className="kagami-hud-top flex flex-col items-center gap-2 px-6">
+        <Moon className="size-8 text-fg" aria-hidden="true" />
+        <h1 className="font-display text-4xl font-semibold tracking-tight">
+          月華鏡
+        </h1>
+      </span>
+      <span className="kagami-hud-bottom px-6 text-center text-xs text-fg">
+        タップしてはじめる
+      </span>
     </button>
   );
 }

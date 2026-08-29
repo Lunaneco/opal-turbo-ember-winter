@@ -47,6 +47,11 @@ const html = `<!doctype html>
     <title>月華鏡</title>
     <meta name="description" content="画像を結晶に割り、くるくる回すと万華鏡になる。" />
     <meta name="theme-color" content="#09090b" />
+    <style>
+      html, body, #root { height: 100%; width: 100%; margin: 0; overflow: hidden; }
+      #root { min-height: 100dvh; }
+      body { position: fixed; inset: 0; background: #09090b; }
+    </style>
     <link rel="icon" type="image/svg+xml" href="${prefix}/favicon.svg" />
     <link rel="apple-touch-icon" href="${prefix}/apple-touch-icon.png" />
     <link rel="stylesheet" href="${prefix}/${cssRel}" />
