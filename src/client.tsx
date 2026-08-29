@@ -1,6 +1,7 @@
 import { StrictMode, startTransition } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { Kagami } from "@/components/kagami";
+import "./styles.css";
 
 startTransition(() => {
   void boot();

@@ -97,9 +97,13 @@ export function Kagami() {
 
     const fit = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const rect = canvas.getBoundingClientRect();
-      const cssW = Math.max(1, rect.width || window.innerWidth);
-      const cssH = Math.max(1, rect.height || window.innerHeight);
+      const cssW = Math.max(1, window.innerWidth);
+      const cssH = Math.max(1, window.innerHeight);
+      canvas.style.position = "absolute";
+      canvas.style.left = "0";
+      canvas.style.top = "0";
+      canvas.style.width = `${cssW}px`;
+      canvas.style.height = `${cssH}px`;
       const w = Math.max(1, Math.round(cssW * dpr));
       const h = Math.max(1, Math.round(cssH * dpr));
       if (canvas.width !== w || canvas.height !== h) {
@@ -413,6 +417,13 @@ export function Kagami() {
   return (
     <div
       className="kagami-shell bg-bg text-fg"
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+      }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
