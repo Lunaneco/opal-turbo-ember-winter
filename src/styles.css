@@ -122,10 +122,9 @@
 
 .kagami-title {
   background: radial-gradient(
-    circle closest-side at 50% 50%,
-    transparent 0 34%,
-    color-mix(in oklab, var(--color-bg) 28%, transparent) 48%,
-    color-mix(in oklab, var(--color-bg) 72%, transparent) 72%,
+    ellipse 55% 48% at 50% 50%,
+    color-mix(in oklab, var(--color-bg) 22%, transparent) 0%,
+    color-mix(in oklab, var(--color-bg) 62%, transparent) 52%,
     var(--color-bg) 100%
   );
 }

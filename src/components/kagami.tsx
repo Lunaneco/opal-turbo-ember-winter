@@ -260,7 +260,7 @@ export function Kagami() {
       setLoadPct(0);
       setLoadLabel("画像");
       void applyImage(url, next, {
-        ai: import.meta.env.VITE_ENABLE_AI === "true",
+        ai: true,
         onStep: (pct, label) => {
           setLoadPct(pct);
           setLoadLabel(label);
@@ -416,7 +416,7 @@ export function Kagami() {
 
   return (
     <div
-      className="kagami-shell bg-bg text-fg"
+      className="kagami-shell relative h-dvh w-full overflow-hidden bg-bg text-fg"
       style={{
         position: "fixed",
         inset: 0,
@@ -435,7 +435,7 @@ export function Kagami() {
       <canvas
         ref={canvasRef}
         className={cn(
-          "kagami-canvas",
+          "kagami-canvas absolute inset-0 size-full",
           (gate !== "ready" || mode !== "play") && "pointer-events-none",
         )}
         draggable={false}
@@ -528,17 +528,13 @@ function TitleScreen({ onStart }: { onStart: () => void }) {
         e.preventDefault();
         onStart();
       }}
-      className="kagami-title absolute inset-0 z-30"
+      className="kagami-title absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 px-6"
     >
-      <span className="kagami-hud-top flex flex-col items-center gap-2 px-6">
-        <Moon className="size-8 text-fg" aria-hidden="true" />
-        <h1 className="font-display text-4xl font-semibold tracking-tight">
-          月華鏡
-        </h1>
-      </span>
-      <span className="kagami-hud-bottom px-6 text-center text-xs text-fg">
-        タップしてはじめる
-      </span>
+      <Moon className="size-8 text-muted" aria-hidden="true" />
+      <h1 className="font-display text-4xl font-semibold tracking-tight">
+        月華鏡
+      </h1>
+      <p className="text-xs text-muted">タップしてはじめる</p>
     </button>
   );
 }
