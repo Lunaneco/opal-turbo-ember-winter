@@ -156,17 +156,16 @@ void main() {
   vec2 fOff = fac.zw;
   vec2 jolt = hash2(vec2(fid, fid + 3.1)) - 0.5;
 
-  float scale = max(uHeroR, 0.1) / 0.4 * uZoom;
-  float rHero = max(qLen, 0.085 * inner);
-  float rMid = mix(0.15, 0.28, clamp(qLen * 0.9, 0.0, 1.0));
-  float rGem = mix(mix(rHero, rMid, 1.0 - inner), qLen * (1.0 + outer * 0.22), outer);
+  float imgScale = max(uHeroR, 0.42) * uZoom;
+  float rHero = qLen;
+  float rGem = mix(qLen, qLen * (1.0 + outer * 0.16), outer);
 
-  vec2 tumble = vec2(cos(uRot * 0.9), sin(uRot * 1.25)) * mix(0.008, 0.045, outer);
-  tumble += vec2(sin(uRot * 1.55), cos(uRot * 0.7)) * (0.006 * mid + 0.028 * outer);
+  vec2 tumble = vec2(cos(uRot * 0.9), sin(uRot * 1.25)) * mix(0.003, 0.028, outer);
+  tumble += vec2(sin(uRot * 1.55), cos(uRot * 0.7)) * (0.003 * mid + 0.016 * outer);
 
-  vec2 uvHero = qDir * rHero * scale + uFocus + tumble * 0.28 + uOffset * 0.1;
-  vec2 uvGem = qDir * rGem * scale + jolt * mix(0.004, 0.012, outer) * (0.35 + uShatter)
-             + uFocus + tumble + uOffset * 0.16;
+  vec2 uvHero = qDir * rHero * imgScale + uFocus + tumble * 0.22 + uOffset * 0.08;
+  vec2 uvGem = qDir * rGem * imgScale + jolt * mix(0.002, 0.01, outer) * (0.35 + uShatter)
+             + uFocus + tumble + uOffset * 0.12;
   uvHero = mirrorUv(uvHero);
   uvGem = mirrorUv(uvGem);
 
@@ -229,10 +228,9 @@ void main() {
   env += vec3(1.0, 0.97, 0.92) * pow(max(dot(R, L), 0.0), 36.0);
   gem += env * fres * mix(0.16, 0.42, uGem) * (0.28 + 0.72 * (mid + outer));
 
-  vec3 sharp = clamp(photo * vec3(1.06, 1.03, 1.05), 0.0, 1.0);
-  float keep = clamp(hero * inner * 0.28, 0.0, 1.0);
-  keep *= 1.0 - mid * 0.92;
-  keep *= 1.0 - outer;
+  vec3 sharp = clamp(photo * vec3(1.04, 1.02, 1.03), 0.0, 1.0);
+  float keep = clamp((inner * 0.72 + mid * 0.28) * mix(0.55, 1.0, hero), 0.0, 1.0);
+  keep *= 1.0 - outer * 0.92;
   vec3 col = mix(gem, sharp, keep);
 
   vec3 edgeCol = mix(vec3(0.97, 0.99, 1.0), uAccent, 0.22);
@@ -261,29 +259,16 @@ void main() {
   float spoke = 1.0 - smoothstep(0.0, 0.032, folded * (0.4 + rad));
   float core = exp(-rad * rad * 7.2);
 
-  float portR = 0.3;
-  vec2 uvFace = uFocus + vec2(p.x, p.y) * (max(uHeroR, 0.04) / portR);
-  uvFace = clamp(uvFace, 0.001, 0.999);
-  vec3 faceCol = texture2D(uPhoto, uvFace).rgb;
-  float portrait = 1.0 - smoothstep(portR * 0.94, portR, rad);
-
-  col += mix(vec3(0.92, 0.96, 1.0), uAccent, 0.32) * spoke * (0.07 + specVis * 0.32) * (1.0 - portrait);
-  col += gem * core * 0.045 * (1.0 - portrait);
-  float petal = (1.0 - smoothstep(0.0, 0.055, folded * (0.4 + rad))) * mid * (1.0 - portrait);
+  float spokeFade = smoothstep(0.05, 0.18, rad);
+  col += mix(vec3(0.92, 0.96, 1.0), uAccent, 0.32) * spoke * (0.07 + specVis * 0.32) * spokeFade;
+  col += gem * core * 0.035;
+  float petal = (1.0 - smoothstep(0.0, 0.055, folded * (0.4 + rad))) * mid;
   col += mix(vec3(0.85, 0.92, 1.0), uAccent, 0.4) * petal * (0.05 + bevel * 0.08);
 
   float prismBand = pow(0.5 + 0.5 * sin(folded * 16.0 + rad * 7.0 - uTime * 0.45), 9.0);
-  col += fireHue(folded * 1.8 + rad) * prismBand * uPrism * 0.14 * mid * (1.0 - portrait);
+  col += fireHue(folded * 1.8 + rad) * prismBand * uPrism * 0.14 * mid;
 
-  col = mix(col, faceCol, portrait * uHasPhoto);
-
-  float rim = smoothstep(portR * 0.93, portR * 0.995, rad) *
-    (1.0 - smoothstep(portR * 1.0, portR * 1.12, rad));
-  vec3 bezel = mix(vec3(0.88, 0.93, 1.0), uAccent, 0.38);
-  bezel += specVis * 0.4 + fireHue(uRot * 0.2) * uPrism * 0.16;
-  col = mix(col, max(col, bezel), rim * 0.48);
-
-  float cover = smoothstep(0.86, 1.32, rad) * (1.0 - portrait);
+  float cover = smoothstep(0.86, 1.32, rad);
   vec2 uv = gl_FragCoord.xy / max(uRes.y, 1.0);
 
   if (cover > 0.01 && uMood > 0.5) {

@@ -9,10 +9,10 @@ export type FocusSpot = {
 };
 
 export const FACE_SPOT: FocusSpot = {
-  id: "face",
+  id: "image",
   x: 0.5,
   y: 0.5,
-  r: 0.48,
+  r: 0.5,
   weight: 1,
 };
 
@@ -26,6 +26,20 @@ export const CLOTH_SPOT: FocusSpot = {
 
 export function defaultSpots(): FocusSpot[] {
   return [{ ...FACE_SPOT }];
+}
+
+export function extractAccent(
+  square: HTMLCanvasElement,
+): [number, number, number] {
+  const parts = gridParts(square);
+  const top = parts[0];
+  if (!top) return [0.86, 0.93, 1];
+  const lift = 1.12;
+  return [
+    Math.min(1, (top.r / 255) * lift),
+    Math.min(1, (top.g / 255) * lift),
+    Math.min(1, (top.b / 255) * lift),
+  ];
 }
 
 export function squareCover(
@@ -91,11 +105,6 @@ type Sample = {
   g: number;
   b: number;
   n?: number;
-};
-
-const HERO_LABEL: Record<string, string> = {
-  face: "顔",
-  cloth: "服",
 };
 
 function chroma(s: Sample) {
@@ -253,19 +262,9 @@ export function makeBeadAt(
   };
 }
 
-export function extractBeads(
-  square: HTMLCanvasElement,
-  spots: FocusSpot[],
-): Bead[] {
-  const beads: Bead[] = spots.map((spot) =>
-    makeBeadAt(square, spot.x, spot.y, {
-      id: spot.id,
-      label: HERO_LABEL[spot.id] ?? "顔",
-      kind: "hero",
-      r: spot.r,
-    }),
-  );
-  const usedLabels = new Set(beads.map((b) => b.label));
+export function extractBeads(square: HTMLCanvasElement): Bead[] {
+  const beads: Bead[] = [];
+  const usedLabels = new Set<string>();
   for (const c of gridParts(square)) {
     const label = colorLabel(c.r, c.g, c.b);
     if (usedLabels.has(label)) continue;
@@ -297,22 +296,10 @@ export function toJpegDataUrl(
 
 export function beadsFromHints(
   square: HTMLCanvasElement,
-  spots: FocusSpot[],
   hints: Array<{ label: string; x: number; y: number; r: number }>,
 ): Bead[] {
-  const beads: Bead[] = spots.map((spot) =>
-    makeBeadAt(square, spot.x, spot.y, {
-      id: spot.id,
-      label: HERO_LABEL[spot.id] ?? "顔",
-      kind: "hero",
-      r: spot.r,
-    }),
-  );
-  const face = spots[0];
+  const beads: Bead[] = [];
   for (const hint of hints) {
-    if (face && Math.hypot(hint.x - face.x, hint.y - face.y) < face.r * 0.55) {
-      continue;
-    }
     beads.push(
       makeBeadAt(square, hint.x, hint.y, {
         kind: "bead",
@@ -320,10 +307,10 @@ export function beadsFromHints(
         r: hint.r,
       }),
     );
-    if (beads.filter((b) => b.kind === "bead").length >= 6) break;
+    if (beads.length >= 6) break;
   }
-  if (!beads.some((b) => b.kind === "bead")) {
-    return extractBeads(square, spots);
+  if (!beads.length) {
+    return extractBeads(square);
   }
   return beads;
 }

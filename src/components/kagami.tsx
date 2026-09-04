@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Gem, ImagePlus, Moon, Palette, Scan, Smartphone, Trash2 } from "lucide-react";
+import { Check, Gem, ImagePlus, Moon, Palette, Smartphone, Trash2 } from "lucide-react";
 import {
   bakeMask,
   beadsFromHints,
   defaultSpots,
+  extractAccent,
   extractBeads,
   makeBeadAt,
   squareCover,
@@ -23,7 +24,7 @@ const START_IMAGE = publicUrl("samples/icon.jpg");
 const MAX_UPLOAD_BYTES = 8_000_000;
 const SLICE_OPTIONS = [6, 8, 10, 12];
 
-type Mode = "play" | "pick" | "beads";
+type Mode = "play" | "beads";
 type Gate = "load" | "ready";
 
 type Engine = {
@@ -49,9 +50,7 @@ export function Kagami() {
   const [loadLabel, setLoadLabel] = useState("準備");
   const [mode, setMode] = useState<Mode>("play");
   const [preview, setPreview] = useState("");
-  const [spots, setSpots] = useState<FocusSpot[]>(() => defaultSpots());
   const [beads, setBeads] = useState<Bead[]>([]);
-  const [activeId, setActiveId] = useState("face");
   const [beadId, setBeadId] = useState<string | null>(null);
   const [showParts, setShowParts] = useState(false);
   const [partsView, setPartsView] = useState<"photo" | "name">("photo");
@@ -62,6 +61,7 @@ export function Kagami() {
   const setHudRef = useRef(setHud);
   const setShowPartsRef = useRef(setShowParts);
   const themeRef = useRef(theme);
+  const imageAccentRef = useRef<[number, number, number] | null>(null);
   const readyRef = useRef(false);
   const gateRef = useRef<Gate>("load");
   const assetsRef = useRef(false);
@@ -147,6 +147,10 @@ export function Kagami() {
       if (modeRef.current === "play") {
         const spin = motion.sample(dt);
         const th = themeRef.current;
+        const imgA = imageAccentRef.current;
+        const accentR = imgA ? imgA[0] * 0.62 + th.accent[0] * 0.38 : th.accent[0];
+        const accentG = imgA ? imgA[1] * 0.62 + th.accent[1] * 0.38 : th.accent[1];
+        const accentB = imgA ? imgA[2] * 0.62 + th.accent[2] * 0.38 : th.accent[2];
         gl.render({
           offsetX: 0,
           offsetY: 0,
@@ -155,16 +159,16 @@ export function Kagami() {
           heroR: focus.r,
           rot: spin.rot,
           slices: slicesRef.current,
-          zoom: 0.92,
+          zoom: 1,
           shatter: 0.06 + spin.speed * 0.22,
           lightX: spin.lightX,
           lightY: spin.lightY,
           time: now / 1000,
           width: canvas.width,
           height: canvas.height,
-          accentR: th.accent[0],
-          accentG: th.accent[1],
-          accentB: th.accent[2],
+          accentR,
+          accentG,
+          accentB,
           gem: th.gem,
           star: th.star,
           prism: th.prism,
@@ -205,9 +209,10 @@ export function Kagami() {
         squareRef.current = square;
         gl.setPhoto(square);
         applySpots(nextSpots);
+        imageAccentRef.current = extractAccent(square);
         photoOn = 1;
         await step(70, "ビーズ");
-        let nextBeads = extractBeads(square, nextSpots);
+        let nextBeads = extractBeads(square);
         setPreview(square.toDataURL("image/jpeg", 0.85));
         setBeads(nextBeads);
         if (opts?.ai) {
@@ -225,7 +230,7 @@ export function Kagami() {
               }),
             ]);
             if (ai.ok && ai.beads.length) {
-              nextBeads = beadsFromHints(square, nextSpots, ai.beads);
+              nextBeads = beadsFromHints(square, ai.beads);
               setBeads(nextBeads);
             }
           } catch {
@@ -256,8 +261,6 @@ export function Kagami() {
       const url = URL.createObjectURL(file);
       const next = defaultSpots();
       setPreview(url);
-      setSpots(next);
-      setActiveId(next[0]?.id ?? "face");
       setGate("load");
       setLoadPct(0);
       setLoadLabel("画像");
@@ -269,7 +272,8 @@ export function Kagami() {
         },
       })
         .then(() => {
-          setMode("pick");
+          setMode("play");
+          setHud(true);
           setGate("ready");
         })
         .catch(() => {
@@ -305,31 +309,6 @@ export function Kagami() {
     const ok = await enableGyroRef.current();
     setGyroOn(ok);
     setGyroBusy(false);
-  }
-
-  function confirmSpots() {
-    const ordered = [
-      ...spots.filter((s) => s.id === "face"),
-      ...spots.filter((s) => s.id !== "face"),
-    ];
-    const next = (ordered.length ? ordered : defaultSpots()).filter(
-      (s) => s.id === "face",
-    );
-    engineRef.current?.applySpots(next);
-    const square = squareRef.current;
-    if (square) {
-      const heroes = next.map((spot) =>
-        makeBeadAt(square, spot.x, spot.y, {
-          id: spot.id,
-          kind: "hero",
-          r: spot.r,
-          label: "顔",
-        }),
-      );
-      setBeads((prev) => [...heroes, ...prev.filter((b) => b.kind === "bead")]);
-    }
-    setMode("play");
-    setHud(true);
   }
 
   function openBeads() {
@@ -391,8 +370,6 @@ export function Kagami() {
     setBeadId(next.find((b) => b.kind === "bead")?.id ?? next[0]?.id ?? null);
   }
 
-  const active = spots.find((s) => s.id === activeId) ?? spots[0];
-
   return (
     <div
       className="kagami-shell relative h-dvh w-full overflow-hidden bg-bg text-fg"
@@ -440,7 +417,6 @@ export function Kagami() {
           themeId={theme.id}
           onGyro={() => void onGyro()}
           onUpload={() => fileRef.current?.click()}
-          onPick={() => setMode("pick")}
           onToggleParts={() => setShowParts((v) => !v)}
           onPartsView={setPartsView}
           onToggleThemes={() => setShowThemes((v) => !v)}
@@ -452,17 +428,6 @@ export function Kagami() {
           onSlices={setSlices}
         />
         ) : null
-      ) : gate === "ready" && mode === "pick" ? (
-        <FocusPicker
-          preview={preview}
-          spots={spots}
-          activeId={activeId}
-          active={active}
-          onActive={setActiveId}
-          onSpots={setSpots}
-          onConfirm={confirmSpots}
-          onUpload={() => fileRef.current?.click()}
-        />
       ) : gate === "ready" ? (
         <BeadEditor
           preview={preview}
@@ -538,7 +503,6 @@ function PlayHud({
   themeId,
   onGyro,
   onUpload,
-  onPick,
   onToggleParts,
   onPartsView,
   onToggleThemes,
@@ -557,7 +521,6 @@ function PlayHud({
   themeId: string;
   onGyro: () => void;
   onUpload: () => void;
-  onPick: () => void;
   onToggleParts: () => void;
   onPartsView: (view: "photo" | "name") => void;
   onToggleThemes: () => void;
@@ -575,16 +538,6 @@ function PlayHud({
           </p>
         </div>
         <div className="pointer-events-auto flex gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            size="icon"
-            aria-label="主張する部分"
-            disabled={!ready}
-            onClick={onPick}
-          >
-            <Scan className="size-4" />
-          </Button>
           <Button
             type="button"
             variant={showParts ? "primary" : "secondary"}
@@ -972,186 +925,6 @@ function BeadEditor({
           >
             <Check className="size-4" />
             一覧へ
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FocusPicker({
-  preview,
-  spots,
-  activeId,
-  active,
-  onActive,
-  onSpots,
-  onConfirm,
-  onUpload,
-}: {
-  preview: string;
-  spots: FocusSpot[];
-  activeId: string;
-  active: FocusSpot | undefined;
-  onActive: (id: string) => void;
-  onSpots: (spots: FocusSpot[]) => void;
-  onConfirm: () => void;
-  onUpload: () => void;
-}) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ id: string } | null>(null);
-
-  function clientToUv(clientX: number, clientY: number) {
-    const el = stageRef.current;
-    if (!el) return null;
-    const rect = el.getBoundingClientRect();
-    const x = (clientX - rect.left) / Math.max(rect.width, 1);
-    const y = (clientY - rect.top) / Math.max(rect.height, 1);
-    return {
-      x: Math.min(1, Math.max(0, x)),
-      y: Math.min(1, Math.max(0, y)),
-    };
-  }
-
-  function moveSpot(id: string, x: number, y: number) {
-    onSpots(spots.map((s) => (s.id === id ? { ...s, x, y } : s)));
-  }
-
-  function setRadius(id: string, r: number) {
-    onSpots(spots.map((s) => (s.id === id ? { ...s, r } : s)));
-  }
-
-  return (
-    <div
-      className="absolute inset-0 z-40 flex flex-col bg-bg/92"
-      style={{ zIndex: 40 }}
-    >
-      <header className="kagami-hud-top flex items-start justify-between gap-3 px-4 md:px-6">
-        <div>
-          <p className="font-display text-lg font-semibold tracking-tight md:text-xl">
-            主張する部分
-          </p>
-          <p className="text-xs text-muted">
-            Xのアイコン全体を中心にそのまま見せる
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon"
-          aria-label="画像を置く"
-          onClick={onUpload}
-        >
-          <ImagePlus className="size-4" />
-        </Button>
-      </header>
-
-      <div className="flex min-h-0 flex-1 items-center justify-center px-4">
-        <div
-          ref={stageRef}
-          className="kagami-pick-stage relative aspect-square w-full max-w-md overflow-hidden rounded-lg bg-elevated"
-          onPointerDown={(e) => {
-            if (e.target !== e.currentTarget) return;
-            const uv = clientToUv(e.clientX, e.clientY);
-            if (!uv) return;
-            const hit = [...spots]
-              .reverse()
-              .find((s) => Math.hypot(s.x - uv.x, s.y - uv.y) <= s.r);
-            if (hit) {
-              onActive(hit.id);
-              dragRef.current = { id: hit.id };
-              e.currentTarget.setPointerCapture(e.pointerId);
-            }
-          }}
-          onPointerMove={(e) => {
-            const drag = dragRef.current;
-            if (!drag) return;
-            const uv = clientToUv(e.clientX, e.clientY);
-            if (uv) moveSpot(drag.id, uv.x, uv.y);
-          }}
-          onPointerUp={(e) => {
-            dragRef.current = null;
-            if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-              e.currentTarget.releasePointerCapture(e.pointerId);
-            }
-          }}
-        >
-          <img
-            src={preview}
-            alt="元の画像"
-            draggable={false}
-            className="pointer-events-none absolute inset-0 size-full object-cover select-none"
-          />
-          {spots.map((spot) => (
-            <button
-              key={spot.id}
-              type="button"
-              aria-label="顔"
-              aria-pressed={spot.id === activeId}
-              className={cn(
-                "absolute rounded-full border-2 transition-[border-color,box-shadow] duration-[var(--motion-quick)] ease-[var(--ease-out)]",
-                spot.id === activeId
-                  ? "border-fg ring-1 ring-bg"
-                  : "border-fg/50",
-              )}
-              style={{
-                left: `${spot.x * 100}%`,
-                top: `${spot.y * 100}%`,
-                width: `${spot.r * 200}%`,
-                height: `${spot.r * 200}%`,
-                transform: "translate(-50%, -50%)",
-              }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                onActive(spot.id);
-                dragRef.current = { id: spot.id };
-                e.currentTarget.setPointerCapture(e.pointerId);
-              }}
-              onPointerMove={(e) => {
-                if (!dragRef.current) return;
-                const uv = clientToUv(e.clientX, e.clientY);
-                if (uv) moveSpot(spot.id, uv.x, uv.y);
-              }}
-              onPointerUp={(e) => {
-                dragRef.current = null;
-                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-                  e.currentTarget.releasePointerCapture(e.pointerId);
-                }
-              }}
-            >
-              <span className="absolute left-1/2 top-1.5 -translate-x-1/2 rounded-sm bg-bg/80 px-2 py-0.5 text-xs text-fg">
-                顔
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="kagami-hud-bottom flex flex-col gap-3 px-4 pb-4 md:px-6">
-        {active ? (
-          <div className="mx-auto w-full max-w-md">
-            <div className="mb-1 flex items-center justify-between text-xs text-muted">
-              <span>大きさ</span>
-              <span className="tabular-nums">
-                {Math.round(active.r * 100)}
-              </span>
-            </div>
-            <Slider
-              min={0.2}
-              max={0.5}
-              step={0.01}
-              value={[active.r]}
-              onValueChange={(v) => {
-                const n = v[0];
-                if (typeof n === "number") setRadius(active.id, n);
-              }}
-            />
-          </div>
-        ) : null}
-        <div className="mx-auto flex w-full max-w-md gap-2">
-          <Button type="button" variant="primary" className="flex-1" onClick={onConfirm}>
-            <Check className="size-4" />
-            万華鏡を見る
           </Button>
         </div>
       </div>
